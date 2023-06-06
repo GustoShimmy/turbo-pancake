@@ -1,0 +1,63 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const API_URL = "http://api.stackexchange.com/2.2/users?pagesize=20&order=desc&sort=reputation&site=stackoverflow";
+
+function App() {
+  const [users, setUsers] = useState([]);
+  const [followedUsers, setFollowedUsers] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    axios.get(API_URL)
+      .then(response => {
+        setUsers(response.data.items);
+        setError(null);
+      })
+      .catch(error => {
+        setError('Error fetching data. Please try again.');
+      });
+  }, []);
+
+  const followUser = (id) => {
+    setFollowedUsers([...followedUsers, id]);
+  };
+
+  const blockUser = (id) => {
+    setBlockedUsers([...blockedUsers, id]);
+  };
+
+  const isUserFollowed = (id) => followedUsers.includes(id);
+
+  const isUserBlocked = (id) => blockedUsers.includes(id);
+
+  return (
+    <div className="App">
+      {error && <p>{error}</p>}
+      <ul>
+        {users.map(user => (
+          <li key={user.user_id} style={{opacity: isUserBlocked(user.user_id) ? 0.5 : 1}}>
+            <img src={user.profile_image} alt="profile" />
+            <p>{user.display_name}</p>
+            <p>Reputation: {user.reputation}</p>
+            {!isUserBlocked(user.user_id) &&
+              (isUserFollowed(user.user_id) ? (
+                <button onClick={() => setFollowedUsers(followedUsers.filter(userId => userId !== user.user_id))}>Unfollow</button>
+              ) : (
+                <button onClick={() => followUser(user.user_id)}>Follow</button>
+              ))}
+            {!isUserFollowed(user.user_id) && 
+              (isUserBlocked(user.user_id) ? (
+                <button onClick={() => setBlockedUsers(blockedUsers.filter(userId => userId !== user.user_id))}>Unblock</button>
+              ) : (
+                <button onClick={() => blockUser(user.user_id)}>Block</button>
+              ))}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default App;
